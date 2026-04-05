@@ -1,0 +1,10 @@
+<h2>Hapus Laporan</h2>
+
+<p>Yakin ingin menghapus: {{ report.title }}?</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit">Ya, hapus</button>
+</form>
+
+<a href="/reports/">Batal</a>
