@@ -1,10 +1,46 @@
-<h2>Hapus Laporan</h2>
+{% extends 'base.html' %}
 
-<p>Yakin ingin menghapus: {{ report.title }}?</p>
+{% block title %}Hapus Laporan - IET City{% endblock %}
 
-<form method="POST">
-    {% csrf_token %}
-    <button type="submit">Ya, hapus</button>
-</form>
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'report_list' %}">Laporan</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'report_detail' report.pk %}">{{ report.title }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Hapus</li>
+    </ol>
+</nav>
 
-<a href="/reports/">Batal</a>
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h2 class="text-danger mb-4">
+                    <i class="bi bi-exclamation-triangle"></i> Hapus Laporan
+                </h2>
+                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <p class="text-muted mb-4">
+                    Anda akan menghapus laporan berikut. Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <div class="alert alert-light border-danger">
+                    <h5 class="text-danger">{{ report.title }}</h5>
+                    <small class="text-muted">
+                        <strong>Kategori:</strong> {{ report.category }} <br>
+                        <strong>Lokasi:</strong> {{ report.location }}
+                    </small>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-danger flex-grow-1">
+                            <i class="bi bi-trash"></i> Ya, Hapus Laporan
+                        </button>
+                        <a href="{% url 'report_list' %}" class="btn btn-secondary flex-grow-1">Batal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

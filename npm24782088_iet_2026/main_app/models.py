@@ -1,5 +1,14 @@
 from django.db import models
 
+STATUS_CHOICES = [
+    ('REPORTED', 'Reported'),
+    ('VERIFIED', 'Verified'),
+    ('IN_PROGRESS', 'In Progress'),
+    ('RESOLVED', 'Resolved'),
+]
+
+STATUS_FLOW = ['REPORTED', 'VERIFIED', 'IN_PROGRESS', 'RESOLVED']
+
 # Create your models here.
 class Report(models.Model):
     title = models.CharField(max_length=200)
@@ -8,6 +17,23 @@ class Report(models.Model):
     location = models.CharField(max_length=200)
     status = models.CharField(
         max_length=20,
+        choices=STATUS_CHOICES,
         default='REPORTED'
     )
-    Created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_allowed_statuses(self):
+        try:
+            current_index = STATUS_FLOW.index(self.status)
+        except ValueError:
+            return [self.status]
+
+        if current_index + 1 < len(STATUS_FLOW):
+            return [STATUS_FLOW[current_index], STATUS_FLOW[current_index + 1]]
+        return [STATUS_FLOW[current_index]]
+
+    def is_transition_allowed(self, new_status):
+        return new_status in self.get_allowed_statuses()
+
+    def __str__(self):
+        return self.title
