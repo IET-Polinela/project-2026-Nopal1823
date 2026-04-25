@@ -10,5 +10,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('welcome/', welcome),
     path('about/', include('about.urls')),
-    path('contacts/', include('contacts.urls'))
+    path('contacts/', include('contacts.urls')),
+    path('auth/', include('usermanagement_24782088.urls')),
 ]
