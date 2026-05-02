@@ -30,11 +30,11 @@
             <div class="col-md-3">
                 <select name="category" class="form-select">
                     <option value="">Semua Kategori</option>
-                    <option value="Infrastruktur" {% if request.GET.category == 'Infrastruktur' %}selected{% endif %}>Infrastruktur</option>
+                    <option value="Jalan Rusak" {% if request.GET.category == 'Jalan Rusak' %}selected{% endif %}>Jalan Rusak</option>
+                    <option value="Sampah" {% if request.GET.category == 'Sampah' %}selected{% endif %}>Sampah</option>
+                    <option value="Lampu Mati" {% if request.GET.category == 'Lampu Mati' %}selected{% endif %}>Lampu Mati</option>
+                    <option value="Drainase" {% if request.GET.category == 'Drainase' %}selected{% endif %}>Drainase</option>
                     <option value="Keamanan" {% if request.GET.category == 'Keamanan' %}selected{% endif %}>Keamanan</option>
-                    <option value="Kesehatan" {% if request.GET.category == 'Kesehatan' %}selected{% endif %}>Kesehatan</option>
-                    <option value="Pendidikan" {% if request.GET.category == 'Pendidikan' %}selected{% endif %}>Pendidikan</option>
-                    <option value="Lainnya" {% if request.GET.category == 'Lainnya' %}selected{% endif %}>Lainnya</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -87,7 +87,7 @@
                             <a href="{% url 'edit_report' report.pk %}" class="btn btn-sm btn-warning" title="Edit Laporan">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ report.pk }}" title="Hapus Laporan">
+                            <button type="button" class="btn btn-sm btn-danger btn-delete-trigger" data-pk="{{ report.pk }}" data-title="{{ report.title }}" data-category="{{ report.category }}" data-location="{{ report.location }}" title="Hapus Laporan">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -98,13 +98,12 @@
         </table>
     </div>
 
-    <!-- Delete Confirmation Modals -->
-    {% for report in reports %}
-    <div class="modal fade" id="deleteModal{{ report.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ report.pk }}" aria-hidden="true">
+    <!-- Single shared Delete Confirmation Modal -->
+    <div class="modal fade" id="sharedDeleteModal" tabindex="-1" aria-labelledby="sharedDeleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title text-danger" id="deleteModalLabel{{ report.pk }}">
+                    <h5 class="modal-title text-danger" id="sharedDeleteModalLabel">
                         <i class="bi bi-exclamation-triangle"></i> Konfirmasi Hapus
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -112,14 +111,14 @@
                 <div class="modal-body">
                     <p>Apakah Anda yakin ingin menghapus laporan berikut?</p>
                     <div class="alert alert-light border">
-                        <strong>{{ report.title }}</strong><br>
-                        <small>Kategori: {{ report.category }} | Lokasi: {{ report.location }}</small>
+                        <strong id="deleteModalTitle"></strong><br>
+                        <small id="deleteModalMeta"></small>
                     </div>
                     <p class="text-muted mb-0"><small>Tindakan ini tidak dapat dibatalkan.</small></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <form method="post" action="{% url 'delete_report' report.pk %}" style="display: inline;">
+                    <form method="post" id="deleteForm" action="" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">
                             <i class="bi bi-trash"></i> Ya, Hapus
@@ -129,7 +128,24 @@
             </div>
         </div>
     </div>
-    {% endfor %}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = new bootstrap.Modal(document.getElementById('sharedDeleteModal'));
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-delete-trigger');
+            if (!btn) return;
+            const pk       = btn.dataset.pk;
+            const title    = btn.dataset.title;
+            const category = btn.dataset.category;
+            const location = btn.dataset.location;
+            document.getElementById('deleteModalTitle').textContent = title;
+            document.getElementById('deleteModalMeta').textContent  = 'Kategori: ' + category + ' | Lokasi: ' + location;
+            document.getElementById('deleteForm').action = '/delete/' + pk + '/';
+            modal.show();
+        });
+    });
+    </script>
 {% else %}
     <div class="text-center py-5">
         <div class="mb-4">
