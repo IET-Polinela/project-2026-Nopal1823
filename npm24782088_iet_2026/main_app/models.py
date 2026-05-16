@@ -1,13 +1,14 @@
 from django.db import models
 
 STATUS_CHOICES = [
+    ('DRAFT', 'Draft'),
     ('REPORTED', 'Reported'),
     ('VERIFIED', 'Verified'),
     ('IN_PROGRESS', 'In Progress'),
     ('RESOLVED', 'Resolved'),
 ]
 
-STATUS_FLOW = ['REPORTED', 'VERIFIED', 'IN_PROGRESS', 'RESOLVED']
+STATUS_FLOW = ['DRAFT', 'REPORTED', 'VERIFIED', 'IN_PROGRESS', 'RESOLVED']
 
 # Create your models here.
 class Report(models.Model):
@@ -20,7 +21,14 @@ class Report(models.Model):
         choices=STATUS_CHOICES,
         default='REPORTED'
     )
+    reporter = models.ForeignKey(
+        'usermanagement_24782088.CustomUser', 
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def get_allowed_statuses(self):
         try:
