@@ -19,7 +19,7 @@ class Report(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='REPORTED'
+        default='DRAFT'
     )
     reporter = models.ForeignKey(
         'usermanagement_24782088.CustomUser', 
