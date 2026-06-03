@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Warga - Metro City</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #5e72e4;
+            --primary-dark: #2d3561;
+            --accent: #11cdef;
+            --success: #2dce89;
+            --danger: #f5365c;
+            --warning: #fb6340;
+            --light: #f7fafc;
+            --text: #32325d;
+            --text-light: #8898aa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text);
+            background: linear-gradient(180deg, #f7fafc 0%, #e9ecef 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: #ffffff !important;
+            border-bottom: 2px solid var(--light);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-weight: 900;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .navbar-brand::before { content: '🏙️'; font-size: 1.5rem; }
+
+        #nav-menus .nav-link {
+            color: var(--text) !important;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            margin: 0 0.3rem;
+            position: relative;
+            padding-bottom: 0.5rem !important;
+        }
+        #nav-menus .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 0; height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.3s ease;
+        }
+        #nav-menus .nav-link:hover { color: var(--primary) !important; }
+        #nav-menus .nav-link:hover::after { width: 100%; }
+
+        /* MAIN CONTENT */
+        #app-content {
+            min-height: calc(100vh - 74px - 180px);
+        }
+
+        /* CARDS */
+        .card {
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31,38,135,0.15);
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px rgba(31,38,135,0.22);
+            border-color: rgba(94,114,228,0.3);
+        }
+
+        /* LOGIN PAGE */
+        .login-page {
+            min-height: calc(100vh - 74px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #5e72e4 0%, #11cdef 100%);
+            padding: 2rem 1rem;
+        }
+        .login-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            width: 100%; max-width: 420px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .login-card:hover { transform: none; }
+        .login-card .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 20px 20px 0 0 !important;
+            padding: 2rem;
+            text-align: center;
+            border: none;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border: none; border-radius: 10px;
+            padding: 0.85rem; font-weight: 700;
+            font-size: 1rem; transition: all 0.3s ease;
+            width: 100%; color: #fff;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(94,114,228,0.4);
+            color: #fff;
+        }
+
+        /* FORM */
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(94,114,228,0.1);
+        }
+        .form-label { font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+
+        /* DASHBOARD LAYOUT */
+        .dashboard-layout {
+            display: flex;
+            min-height: calc(100vh - 74px);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px; flex-shrink: 0;
+            background: rgba(255,255,255,0.95);
+            border-right: 2px solid var(--light);
+            padding: 24px 14px;
+            position: sticky; top: 74px;
+            height: calc(100vh - 74px);
+            overflow-y: auto;
+        }
+        .sidebar-label {
+            font-size: 0.68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-light); padding: 0 10px;
+            margin: 14px 0 5px;
+        }
+        .sidebar-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 10px; border-radius: 10px;
+            color: var(--text-light); text-decoration: none;
+            font-size: 0.875rem; font-weight: 600;
+            transition: background 0.16s, color 0.16s;
+            margin-bottom: 2px;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: linear-gradient(135deg, rgba(94,114,228,0.1), rgba(17,205,239,0.05));
+            color: var(--primary);
+        }
+        .sidebar-link i { font-size: 1rem; }
+        .sidebar-divider {
+            border-top: 1.5px solid var(--light);
+            margin: 12px 0;
+        }
+        .user-badge {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px;
+        }
+        .user-avatar {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 800; font-size: 0.9rem; flex-shrink: 0;
+        }
+        .user-info small { display: block; font-size: 0.68rem; color: var(--text-light); }
+        .user-info strong { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+
+        /* MAIN AREA */
+        .main-area { flex: 1; padding: 28px; min-width: 0; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            width: 270px; flex-shrink: 0;
+            padding: 24px 16px;
+            border-left: 2px solid var(--light);
+        }
+
+        /* STAT CARDS */
+        .stat-card {
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(31,38,135,0.10);
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .stat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 36px rgba(31,38,135,0.18);
+        }
+        .stat-icon {
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem; margin-bottom: 12px;
+        }
+        .stat-value {
+            font-weight: 900; font-size: 1.9rem;
+            line-height: 1; margin-bottom: 3px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label { font-size: 0.78rem; color: var(--text-light); font-weight: 600; }
+
+        /* SECTION CARD */
+        .section-card {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 8px 24px rgba(31,38,135,0.10);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .section-title {
+            font-weight: 800; font-size: 1rem; margin-bottom: 2px; color: var(--text);
+        }
+        .section-sub { font-size: 0.8rem; color: var(--text-light); }
+        .page-title {
+            font-weight: 900; font-size: 1.5rem; color: var(--text);
+        }
+        .btn-primary-spa {
+            background: linear-gradient(135deg, var(--primary), #4c63d2);
+            color: #fff; border: none; border-radius: 10px;
+            padding: 9px 18px; font-weight: 700; font-size: 0.875rem;
+            transition: all 0.3s ease;
+            display: inline-flex; align-items: center; gap: 7px;
+            text-decoration: none; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(94,114,228,0.25);
+        }
+        .btn-primary-spa:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(94,114,228,0.4);
+            color: #fff;
+        }
+
+        /* ANNOUNCEMENT ITEMS */
+        .ann-item { padding: 11px 0; border-bottom: 1px solid var(--light); }
+        .ann-item:last-child { border-bottom: none; }
+        .ann-title { font-weight: 700; font-size: 0.875rem; margin-bottom: 2px; color: var(--text); }
+        .ann-time { font-size: 0.72rem; color: var(--text-light); }
+
+        /* ALERT */
+        #alert-container {
+            position: fixed; top: 84px; right: 18px;
+            z-index: 9999; min-width: 290px;
+        }
+        .spa-alert {
+            border: none;
+            border-radius: 12px;
+            border-left: 5px solid;
+            background-color: #ffffff;
+            color: var(--text);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            padding: 1rem 1.25rem;
+            font-size: 0.875rem; font-weight: 600;
+            animation: fadeSlide 0.3s ease;
+        }
+        .spa-alert.alert-success { border-left-color: var(--success); }
+        .spa-alert.alert-danger  { border-left-color: var(--danger); }
+        .spa-alert.alert-warning { border-left-color: var(--warning); }
+
+        /* FOOTER */
+        footer {
+            background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+            border-top: 2px solid var(--light);
+            color: var(--text-light);
+            padding: 3rem 0 2rem 0;
+        }
+        footer h5 {
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* BADGE */
+        .badge-status {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem; font-weight: 700;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 991px) {
+            .sidebar     { display: none; }
+            .right-panel { display: none; }
+            .main-area   { padding: 16px; }
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateX(24px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="#home">Metro City</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div id="nav-menus" class="ms-auto d-flex align-items-center"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Container -->
+    <div id="alert-container"></div>
+
+    <!-- SPA Content -->
+    <div id="app-content"></div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🏙️ Metro City</h5>
+                    <p class="mb-0">Platform Pelaporan Warga untuk Kota yang Lebih Baik</p>
+                    <small>Membangun komunitas yang responsif dan transparan</small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0"><strong>&copy; 2026 Metro City Civic Platform</strong></p>
+                    <small>Mengutamakan Transparansi &bull; Keterlibatan Warga &bull; Solusi Cepat</small>
+                </div>
+            </div>
+            <hr style="border-top: 1px solid rgba(94,114,228,0.1); margin: 1.5rem 0;">
+            <div class="text-center">
+                <small class="text-muted">Developed with Django &amp; Vanilla JS &bull; Memudahkan Pelaporan Masalah Kota Metropolitan</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SPA Module Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/router.js"></script>
+
+</body>
+</html>

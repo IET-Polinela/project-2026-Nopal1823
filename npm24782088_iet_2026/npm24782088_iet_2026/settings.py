@@ -37,13 +37,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     'main_app',
     'about',
     'contacts',
     'usermanagement_24782088',
     'dashboard_24782088',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
 ]
 
 AUTH_USER_MODEL = 'usermanagement_24782088.CustomUser'
@@ -52,6 +54,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/auth/login/'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # CORS: harus di paling atas
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -151,3 +154,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ]
 }
+
+# CORS Settings
+CORS_ALLOW_ALL_ORIGINS = True  # Mengizinkan semua domain untuk mengakses API (untuk testing lokal)
