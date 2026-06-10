@@ -206,19 +206,7 @@ async function editDraft(id) {
     modal.show();
 }
 
-let isSubmitting = false;
-
 async function submitReport(status) {
-    // Cegah double submit
-    if (isSubmitting) return;
-    isSubmitting = true;
-
-    // Disable tombol saat proses
-    const btnDraft  = document.getElementById('btnDraft');
-    const btnSubmit = document.getElementById('btnSubmit');
-    if (btnDraft)  btnDraft.disabled  = true;
-    if (btnSubmit) btnSubmit.disabled = true;
-
     const title       = document.getElementById('inputTitle').value.trim();
     const category    = document.getElementById('inputCategory').value;
     const description = document.getElementById('inputDescription').value.trim();
@@ -226,9 +214,6 @@ async function submitReport(status) {
 
     if (!title || !description || !location) {
         alert('Judul, deskripsi, dan lokasi wajib diisi!');
-        isSubmitting = false;
-        if (btnDraft)  btnDraft.disabled  = false;
-        if (btnSubmit) btnSubmit.disabled = false;
         return;
     }
 
@@ -250,13 +235,9 @@ async function submitReport(status) {
         document.getElementById('reportModalLabel').innerHTML =
             '<i class="bi bi-pencil-square me-2"></i>Buat Laporan Baru';
         editingReportId = null;
-        isSubmitting = false;
         loadDashboardData();
     } else {
         alert('Gagal menyimpan laporan. Coba lagi.');
-        isSubmitting = false;
-        if (btnDraft)  btnDraft.disabled  = false;
-        if (btnSubmit) btnSubmit.disabled = false;
     }
 }
 
@@ -566,33 +547,20 @@ function switchTab(tab) {
 // INISIALISASI DASHBOARD
 // =============================================
 function initDashboard() {
+    // Pasang event listener tombol Simpan Draft & Ajukan di modal
     const btnDraft  = document.getElementById('btnDraft');
     const btnSubmit = document.getElementById('btnSubmit');
 
-    // Hapus listener lama sebelum pasang baru (cegah double submit)
-    if (btnDraft) {
-        const newBtnDraft = btnDraft.cloneNode(true);
-        btnDraft.parentNode.replaceChild(newBtnDraft, btnDraft);
-        newBtnDraft.addEventListener('click', () => submitReport('DRAFT'));
-    }
-    if (btnSubmit) {
-        const newBtnSubmit = btnSubmit.cloneNode(true);
-        btnSubmit.parentNode.replaceChild(newBtnSubmit, btnSubmit);
-        newBtnSubmit.addEventListener('click', () => submitReport('REPORTED'));
-    }
+    if (btnDraft)  btnDraft.addEventListener('click',  () => submitReport('DRAFT'));
+    if (btnSubmit) btnSubmit.addEventListener('click',  () => submitReport('REPORTED'));
 
     // Reset state modal setiap kali ditutup
-    const reportModal = document.getElementById('reportModal');
-    if (reportModal) {
-        const newModal = reportModal.cloneNode(true);
-        reportModal.parentNode.replaceChild(newModal, reportModal);
-        newModal.addEventListener('hidden.bs.modal', () => {
-            document.getElementById('reportForm').reset();
-            document.getElementById('reportModalLabel').innerHTML =
-                '<i class="bi bi-pencil-square me-2"></i>Buat Laporan Baru';
-            editingReportId = null;
-        });
-    }
+    document.getElementById('reportModal')?.addEventListener('hidden.bs.modal', () => {
+        document.getElementById('reportForm').reset();
+        document.getElementById('reportModalLabel').innerHTML =
+            '<i class="bi bi-pencil-square me-2"></i>Buat Laporan Baru';
+        editingReportId = null;
+    });
 
     // Load data awal tab my_reports
     loadDashboardData('my_reports', 1);
