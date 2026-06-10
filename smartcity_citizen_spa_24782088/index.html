@@ -386,6 +386,68 @@
         </div>
     </footer>
 
+    <!-- Modal: Buat/Edit Laporan -->
+    <div class="modal fade" id="reportModal" tabindex="-1"
+        aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="reportModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Buat Laporan Baru
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <form id="reportForm">
+                        <!-- Field: Judul -->
+                        <div class="mb-3">
+                            <label class="form-label" for="inputTitle">Judul Laporan</label>
+                            <input type="text" id="inputTitle" class="form-control"
+                                placeholder="Contoh: Jalan berlubang di Jl. Merdeka" required>
+                        </div>
+                        <!-- Field: Kategori -->
+                        <div class="mb-3">
+                            <label class="form-label" for="inputCategory">Kategori</label>
+                            <select id="inputCategory" class="form-control">
+                                <option value="Infrastruktur">Infrastruktur</option>
+                                <option value="Kebersihan">Kebersihan</option>
+                                <option value="Keamanan">Keamanan</option>
+                                <option value="Utilitas">Utilitas</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <!-- Field: Deskripsi -->
+                        <div class="mb-3">
+                            <label class="form-label" for="inputDescription">Deskripsi</label>
+                            <textarea id="inputDescription" class="form-control" rows="3"
+                                    placeholder="Jelaskan masalah secara detail..." required></textarea>
+                        </div>
+                        <!-- Field: Lokasi -->
+                        <div class="mb-3">
+                            <label class="form-label" for="inputLocation">Lokasi</label>
+                            <input type="text" id="inputLocation" class="form-control"
+                                placeholder="Contoh: Jl. Sudirman No. 10, Jakarta" required>
+                        </div>
+
+                        <!-- Tombol Aksi (wajib type="button") -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary fw-bold px-4"
+                                    id="btnDraft">Simpan Draft</button>
+                            <button type="button" class="btn btn-primary fw-bold px-4"
+                                    id="btnSubmit">
+                                Ajukan <i class="bi bi-send-fill ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

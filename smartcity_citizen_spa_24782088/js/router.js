@@ -44,6 +44,10 @@ function handleRouting() {
         setupLoginForm();
     }
 
+    if (hash === '#dashboard' && typeof initDashboard === 'function') {
+        initDashboard();
+    }
+
     // Scroll ke atas saat pindah halaman
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
