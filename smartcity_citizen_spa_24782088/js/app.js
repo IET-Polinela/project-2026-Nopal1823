@@ -10,11 +10,15 @@
 let currentTab  = 'my_reports';
 let currentPage = 1;
 let editingReportId = null;
+let isLoading = false;
 
 // =============================================
 // LOAD & RENDER DASHBOARD DATA
 // =============================================
 async function loadDashboardData(tab = currentTab, page = currentPage) {
+    if (isLoading) return;
+    isLoading = true;
+
     currentTab  = tab;
     currentPage = page;
 
@@ -43,6 +47,8 @@ async function loadDashboardData(tab = currentTab, page = currentPage) {
 
     const paginationContainer = document.getElementById('paginationContainer');
     if (paginationContainer && !response.ok) paginationContainer.innerHTML = '';
+
+    isLoading = false;
 }
 
 function getStatusBadge(status) {

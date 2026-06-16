@@ -45,7 +45,7 @@ function handleRouting() {
     }
 
     if (hash === '#dashboard' && typeof initDashboard === 'function') {
-        initDashboard();
+        requestAnimationFrame(() => initDashboard());
     }
 
     // Scroll ke atas saat pindah halaman
