@@ -4,7 +4,7 @@
  * JWT access_token dari localStorage ke setiap request.
  */
 
-const BASE_URL = 'http://127.0.0.1:8000';
+const BASE_URL = 'http://103.151.63.88:8006/';
 
 async function requestAPI(endpoint, method = 'GET', bodyData = null) {
     const headers = {
