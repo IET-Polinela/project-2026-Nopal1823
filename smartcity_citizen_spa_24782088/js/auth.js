@@ -12,6 +12,7 @@ function logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('username');
+    localStorage.removeItem('is_staff');
     showAlert('Anda telah keluar dari portal.', 'warning');
     window.location.hash = '#login';
 }
@@ -60,6 +61,13 @@ function setupLoginForm() {
             localStorage.setItem('access_token', result.data.access);
             localStorage.setItem('refresh_token', result.data.refresh);
             localStorage.setItem('username', username);
+
+            // Ambil info is_staff dari endpoint /api/auth/me/ atau decode token
+            // Untuk simplisitas, cek via endpoint profile
+            const profileResult = await requestAPI('/api/auth/me/', 'GET');
+            if (profileResult.ok) {
+                localStorage.setItem('is_staff', profileResult.data.is_staff ? 'true' : 'false');
+            }
 
             showAlert(`Selamat datang, ${username}! Login berhasil.`, 'success');
 

@@ -8,29 +8,28 @@
 
 const routes = {
     '#login':     getLoginView,
+    '#register':  getRegisterView,
     '#dashboard': getDashboardView,
 };
 
 function handleRouting() {
-    const hash = window.location.hash || '#login'; // Default ke login
+    const hash = window.location.hash || '#login';
     const appContent = document.getElementById('app-content');
 
-    // Update navbar sesuai status login
     renderNavMenu();
 
-    // Guard: jika bukan login dan belum punya token, paksa ke login
-    if (hash !== '#login' && !isLoggedIn()) {
+    // Guard: jika bukan login/register dan belum punya token, paksa ke login
+    if (hash !== '#login' && hash !== '#register' && !isLoggedIn()) {
         window.location.hash = '#login';
         return;
     }
 
-    // Guard: jika sudah login dan mencoba buka #login, langsung ke dashboard
-    if (hash === '#login' && isLoggedIn()) {
+    // Guard: jika sudah login dan mencoba buka #login atau #register, langsung ke dashboard
+    if ((hash === '#login' || hash === '#register') && isLoggedIn()) {
         window.location.hash = '#dashboard';
         return;
     }
 
-    // Cari view yang sesuai dengan hash
     const viewFn = routes[hash];
 
     if (viewFn) {
@@ -39,16 +38,18 @@ function handleRouting() {
         appContent.innerHTML = getNotFoundView();
     }
 
-    // Setup form login setelah HTML-nya di-render
     if (hash === '#login' && typeof setupLoginForm === 'function') {
         setupLoginForm();
+    }
+
+    if (hash === '#register' && typeof setupRegisterForm === 'function') {
+        setupRegisterForm();
     }
 
     if (hash === '#dashboard' && typeof initDashboard === 'function') {
         requestAnimationFrame(() => initDashboard());
     }
 
-    // Scroll ke atas saat pindah halaman
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 

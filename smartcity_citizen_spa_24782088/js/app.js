@@ -76,12 +76,21 @@ function renderList(reports, tab) {
     }
 
     container.innerHTML = reports.map(r => {
-        const s         = getStatusBadge(r.status);
-        const isDraft   = r.status === 'DRAFT';
-        const editBtn   = (isDraft && r.is_owner)
+        const s       = getStatusBadge(r.status);
+        const isDraft = r.status === 'DRAFT';
+        const isAdmin = localStorage.getItem('is_staff') === 'true';
+
+        const editBtn = (isDraft && r.is_owner)
             ? `<button class="btn btn-sm btn-outline-warning fw-bold"
                        onclick="editDraft(${r.id})">
                    <i class="bi bi-pencil me-1"></i>Edit
+               </button>`
+            : '';
+
+        const adminBtn = isAdmin && r.status !== 'RESOLVED'
+            ? `<button class="btn btn-sm btn-outline-primary fw-bold ms-1"
+                       onclick="updateStatusAdmin(${r.id}, '${r.status}')">
+                   <i class="bi bi-shield-check me-1"></i>Update Status
                </button>`
             : '';
 
@@ -93,7 +102,7 @@ function renderList(reports, tab) {
                         <span class="badge bg-${s.color} badge-status">${s.label}</span>
                         <strong class="ms-2">${r.title}</strong>
                     </div>
-                    ${editBtn}
+                    <div>${editBtn}${adminBtn}</div>
                 </div>
                 <p class="mb-1 small text-muted">${r.description}</p>
                 <p class="mb-2 small">
@@ -253,13 +262,19 @@ function renderNavMenu() {
 
     if (isLoggedIn()) {
         const username = localStorage.getItem('username') || 'Warga';
+        const isAdmin  = localStorage.getItem('is_staff') === 'true';
+        const roleLabel = isAdmin ? 'Admin' : 'Citizen';
+        const roleColor = isAdmin
+            ? 'background:linear-gradient(135deg,#f5365c,#fb6340);'
+            : 'background:linear-gradient(135deg,#5e72e4,#11cdef);';
+
         navMenus.innerHTML = `
             <a class="nav-link" href="#dashboard">
                 <i class="bi bi-speedometer2 me-1"></i>Dashboard
             </a>
             <span class="nav-link text-muted">
                 <i class="bi bi-person-circle me-1"></i>${username}
-                <span class="badge ms-1" style="background:linear-gradient(135deg,#5e72e4,#11cdef);font-size:0.68rem;border-radius:30px;padding:0.3rem 0.7rem;">Citizen</span>
+                <span class="badge ms-1" style="${roleColor}font-size:0.68rem;border-radius:30px;padding:0.3rem 0.7rem;">${roleLabel}</span>
             </span>
             <button class="btn btn-sm btn-danger ms-2" onclick="logout()">
                 <i class="bi bi-box-arrow-right me-1"></i>Logout
@@ -305,8 +320,61 @@ function getLoginView() {
                     </form>
                     <hr class="my-3">
                     <p class="text-center small mb-0" style="color:var(--text-light);">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Gunakan akun yang terdaftar di Metro City Portal.
+                        Belum punya akun?
+                        <a href="#register" style="color:var(--primary);font-weight:600;">Daftar di sini</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getRegisterView() {
+    return `
+        <div class="login-page">
+            <div class="login-card card">
+                <div class="card-header">
+                    <div style="font-size:2.5rem;">📝</div>
+                    <h4 class="text-white mb-0 mt-2 fw-bold">Daftar Akun</h4>
+                    <p class="text-white-50 mb-0 small">Bergabung dengan Portal Warga Metro City</p>
+                </div>
+                <div class="card-body p-4">
+                    <div id="registerAlert"></div>
+                    <div class="mb-3">
+                        <label class="form-label" for="regUsername">
+                            <i class="bi bi-person me-1"></i>Username
+                        </label>
+                        <input type="text" id="regUsername" class="form-control"
+                            placeholder="Buat username unik" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="regEmail">
+                            <i class="bi bi-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" id="regEmail" class="form-control"
+                            placeholder="Masukkan email (opsional)">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="regPassword">
+                            <i class="bi bi-lock me-1"></i>Password
+                        </label>
+                        <input type="password" id="regPassword" class="form-control"
+                            placeholder="Buat password" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="regPassword2">
+                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
+                        </label>
+                        <input type="password" id="regPassword2" class="form-control"
+                            placeholder="Ulangi password" required>
+                    </div>
+                    <button type="button" id="btnRegister" class="btn-login">
+                        <i class="bi bi-person-plus-fill me-2"></i>Daftar Sekarang
+                    </button>
+                    <hr class="my-3">
+                    <p class="text-center small mb-0" style="color:var(--text-light);">
+                        Sudah punya akun?
+                        <a href="#login" style="color:var(--primary);font-weight:600;">Login di sini</a>
                     </p>
                 </div>
             </div>
@@ -570,4 +638,138 @@ function initDashboard() {
 
     // Load data awal tab my_reports
     loadDashboardData('my_reports', 1);
+}
+
+// =============================================
+// REGISTER
+// =============================================
+function setupRegisterForm() {
+    const btn = document.getElementById('btnRegister');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+        const username  = document.getElementById('regUsername').value.trim();
+        const email     = document.getElementById('regEmail').value.trim();
+        const password  = document.getElementById('regPassword').value;
+        const password2 = document.getElementById('regPassword2').value;
+        const alertBox  = document.getElementById('registerAlert');
+
+        alertBox.innerHTML = '';
+
+        if (!username || !password || !password2) {
+            alertBox.innerHTML = `<div class="alert alert-danger py-2 small">Username dan password wajib diisi.</div>`;
+            return;
+        }
+        if (password !== password2) {
+            alertBox.innerHTML = `<div class="alert alert-danger py-2 small">Password tidak cocok.</div>`;
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Mendaftar...`;
+
+        const payload = { username, password, password2 };
+        if (email) payload.email = email;
+
+        const result = await requestAPI('/api/auth/register/', 'POST', payload);
+
+        if (result.status === 201 || result.status === 200) {
+            alertBox.innerHTML = `<div class="alert alert-success py-2 small">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                Akun berhasil dibuat! Mengarahkan ke halaman login...
+            </div>`;
+            setTimeout(() => { window.location.hash = '#login'; }, 1500);
+        } else {
+            const errors = result.data;
+            let msg = 'Registrasi gagal. ';
+            if (errors?.username)  msg += errors.username.join(' ');
+            if (errors?.password)  msg += errors.password.join(' ');
+            if (errors?.password2) msg += errors.password2.join(' ');
+            if (errors?.detail)    msg += errors.detail;
+            alertBox.innerHTML = `<div class="alert alert-danger py-2 small">${msg}</div>`;
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-person-plus-fill me-2"></i>Daftar Sekarang`;
+        }
+    });
+}
+
+// =============================================
+// ADMIN: UPDATE STATUS LAPORAN (bertahap, 1 langkah maju)
+// =============================================
+async function updateStatusAdmin(id, currentStatus) {
+    const statusFlow = ['DRAFT', 'REPORTED', 'VERIFIED', 'IN_PROGRESS', 'RESOLVED'];
+    const statusLabel = {
+        'DRAFT': 'Draft', 'REPORTED': 'Diajukan', 'VERIFIED': 'Ditinjau',
+        'IN_PROGRESS': 'Diproses', 'RESOLVED': 'Selesai'
+    };
+    const statusColor = {
+        'DRAFT': 'secondary', 'REPORTED': 'primary', 'VERIFIED': 'info',
+        'IN_PROGRESS': 'warning', 'RESOLVED': 'success'
+    };
+
+    const currentIdx = statusFlow.indexOf(currentStatus);
+
+    // Sudah tahap akhir, tidak ada langkah selanjutnya
+    if (currentIdx === -1 || currentIdx >= statusFlow.length - 1) {
+        alert('Laporan ini sudah pada tahap akhir (Selesai).');
+        return;
+    }
+
+    const nextStatus = statusFlow[currentIdx + 1];
+
+    // Inject modal konfirmasi sementara
+    let tempModal = document.getElementById('adminStatusModal');
+    if (!tempModal) {
+        tempModal = document.createElement('div');
+        tempModal.id = 'adminStatusModal';
+        document.body.appendChild(tempModal);
+    }
+
+    tempModal.innerHTML = `
+        <div class="modal fade" id="adminStatusModalInner" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-shield-check me-2"></i>Update Status (Admin)
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3">Laporan ID: <strong>#${id}</strong></p>
+                        <p class="text-muted small mb-1">Status saat ini:</p>
+                        <span class="badge bg-${statusColor[currentStatus]} mb-3" style="font-size:0.85rem;">${statusLabel[currentStatus]}</span>
+                        <div class="text-center my-2">
+                            <i class="bi bi-arrow-down-circle-fill text-primary" style="font-size:1.5rem;"></i>
+                        </div>
+                        <p class="text-muted small mb-1">Akan dinaikkan ke tahap berikutnya:</p>
+                        <span class="badge bg-${statusColor[nextStatus]}" style="font-size:0.9rem;">${statusLabel[nextStatus]}</span>
+                        <p class="text-muted small mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Status hanya bisa dinaikkan satu tahap setiap kali, sesuai alur proses laporan.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-primary fw-bold" id="btnConfirmStatus">
+                            <i class="bi bi-check-lg me-1"></i>Naikkan ke "${statusLabel[nextStatus]}"
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    const modalEl = new bootstrap.Modal(document.getElementById('adminStatusModalInner'));
+    modalEl.show();
+
+    document.getElementById('btnConfirmStatus').onclick = async () => {
+        const response = await requestAPI(`/api/report/${id}/`, 'PATCH', { status: nextStatus });
+
+        if (response.status === 200) {
+            modalEl.hide();
+            loadDashboardData();
+        } else {
+            alert('Gagal update status. ' + JSON.stringify(response.data));
+        }
+    };
 }

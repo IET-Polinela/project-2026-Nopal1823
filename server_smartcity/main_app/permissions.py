@@ -12,9 +12,12 @@ class IsOwnerAndDraftOrReadOnly(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        # Guard: reporter bisa None untuk laporan lama
         if obj.reporter is None:
             return False
 
-        # Izinkan jika pemilik laporan DAN status masih DRAFT
+        # Admin/staff bisa update status laporan apapun
+        if request.user.is_staff:
+            return True
+
+        # Citizen hanya bisa edit laporan miliknya sendiri yang masih DRAFT
         return obj.reporter.pk == request.user.pk and obj.status == 'DRAFT'
