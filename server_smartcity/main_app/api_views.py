@@ -3,6 +3,7 @@ from rest_framework.pagination import PageNumberPagination
 from .models import Report
 from .serializers import ReportSerializer
 from .permissions import IsOwnerAndDraftOrReadOnly
+from drf_spectacular.utils import extend_schema
 
 class ReportPagination(PageNumberPagination):
     page_size = 10
@@ -44,3 +45,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
+        
+    @extend_schema(exclude=True)
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
