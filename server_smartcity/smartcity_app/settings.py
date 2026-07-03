@@ -40,6 +40,9 @@ INSTALLED_APPS = [
 
     'main_app',
     'usermanagement_24782088',
+    'about',
+    'contacts',
+    'dashboard_24782088',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -49,6 +52,9 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = 'usermanagement_24782088.CustomUser'
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/auth/login/'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # CORS: harus di paling atas
@@ -66,7 +72,7 @@ ROOT_URLCONF = 'smartcity_app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -132,6 +138,15 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+from django.contrib.messages import constants as message_constants
+MESSAGE_TAGS = {
+    message_constants.DEBUG: 'debug',
+    message_constants.INFO: 'info',
+    message_constants.SUCCESS: 'success',
+    message_constants.WARNING: 'warning',
+    message_constants.ERROR: 'danger',
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [

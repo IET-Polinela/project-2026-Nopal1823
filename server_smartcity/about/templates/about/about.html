@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}About - IET City{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">About</li>
+    </ol>
+</nav>
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Tentang Kota Metro</h2>
+                <p class="card-text">
+                    Kota Metro adalah salah satu kota di Provinsi Lampung yang dikenal sebagai
+                    kota pendidikan dan memiliki lingkungan yang nyaman.
+                </p>
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary me-2">Home</a>
+                    <a href="/contacts/" class="btn btn-secondary">Kontak</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

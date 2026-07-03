@@ -246,6 +246,7 @@ async function submitReport(status) {
 
     if (response.status === 201 || response.status === 200) {
         bootstrap.Modal.getInstance(document.getElementById('reportModal')).hide();
+        alert('Laporan berhasil disimpan sebagai ' + status + '!');
         document.getElementById('reportForm').reset();
         document.getElementById('reportModalLabel').innerHTML =
             '<i class="bi bi-pencil-square me-2"></i>Buat Laporan Baru';

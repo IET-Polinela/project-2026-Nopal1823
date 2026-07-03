@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Laporan - Metro City{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'report_list' %}">Laporan</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ report.title }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title mb-4">{{ report.title }}</h2>
+                <div class="mb-3">
+                    <strong>Kategori:</strong>
+                    <span>{{ report.category }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Deskripsi:</strong>
+                    <p class="text-muted">{{ report.description }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>Lokasi:</strong>
+                    <span>{{ report.location }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Dibuat Tanggal:</strong>
+                    <span>{{ report.created_at }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <div class="mt-2">
+                        <span class="badge bg-{% if report.status == 'REPORTED' %}danger{% elif report.status == 'VERIFIED' %}info{% elif report.status == 'IN_PROGRESS' %}warning{% else %}success{% endif %} p-2">
+                            {{ report.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card mt-4 bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Ubah Status Laporan</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if report.status == 'REPORTED' %}
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#confirmStatusModal" data-status="VERIFIED" data-status-label="Diverifikasi">
+                                    <i class="bi bi-check-circle"></i> Verifikasi
+                                </button>
+                            {% elif report.status == 'VERIFIED' %}
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#confirmStatusModal" data-status="IN_PROGRESS" data-status-label="Dalam Proses">
+                                    <i class="bi bi-gear"></i> Proses
+                                </button>
+                            {% elif report.status == 'IN_PROGRESS' %}
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#confirmStatusModal" data-status="RESOLVED" data-status-label="Selesai">
+                                    <i class="bi bi-check"></i> Selesai
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                    Status Sudah Selesai
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <a href="{% url 'edit_report' report.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a href="{% url 'delete_report' report.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Hapus
+                    </a>
+                    <a href="{% url 'report_list' %}" class="btn btn-secondary">Kembali</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Status Confirmation Modal -->
+<div class="modal fade" id="confirmStatusModal" tabindex="-1" aria-labelledby="confirmStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: 2px solid #5e72e4; border-radius: 12px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #5e72e4 0%, #11cdef 100%); border: none;">
+                <h5 class="modal-title text-white" id="confirmStatusModalLabel">
+                    <i class="bi bi-exclamation-circle me-2"></i>Konfirmasi Perubahan Status
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <p class="mb-0">Apakah Anda yakin ingin mengubah status laporan menjadi <strong id="newStatusLabel"></strong>?</p>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small>Perubahan status ini akan direkam dan dapat dilihat oleh semua pihak terkait.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Batal
+                </button>
+                <form id="statusForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" id="statusInput" value="">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>Ya, Ubah Status
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const confirmStatusModal = document.getElementById('confirmStatusModal');
+    confirmStatusModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const status = button.getAttribute('data-status');
+        const statusLabel = button.getAttribute('data-status-label');
+        
+        document.getElementById('newStatusLabel').textContent = statusLabel;
+        document.getElementById('statusInput').value = status;
+        document.getElementById('statusForm').action = "{% url 'update_status' report.pk %}";
+    });
+</script>
+{% endblock %}

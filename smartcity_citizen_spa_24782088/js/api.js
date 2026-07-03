@@ -29,6 +29,13 @@ async function requestAPI(endpoint, method = 'GET', bodyData = null) {
     try {
         const response = await fetch(`${BASE_URL}${endpoint}`, options);
 
+        if (response.status === 401) {
+            alert('Sesi Anda telah habis atau Anda belum login.');
+            localStorage.clear();
+            window.location.hash = '#login';
+            return { ok: false, status: 401, data: null };
+        }
+        
         let data = null;
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {

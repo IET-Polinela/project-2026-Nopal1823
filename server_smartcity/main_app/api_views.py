@@ -18,19 +18,23 @@ class ReportViewSet(viewsets.ModelViewSet):
         from django.db.models import Q
         user = self.request.user
 
-        # Filter reporter null agar laporan lama tidak ikut terhitung
         queryset = Report.objects.filter(
             reporter__isnull=False
         ).order_by('-updated_at')
 
         tab = self.request.query_params.get('tab', None)
         if tab == 'my_reports':
+            # Hanya laporan milik user sendiri
             queryset = queryset.filter(reporter=user)
         elif tab == 'feed':
+            # Feed publik: laporan non-DRAFT, bukan milik user sendiri
             queryset = queryset.filter(~Q(reporter=user) & ~Q(status='DRAFT'))
         else:
+            # Default: laporan non-DRAFT + DRAFT milik sendiri
+            # DRAFT milik orang lain DISEMBUNYIKAN TOTAL (404 bukan 403)
             queryset = queryset.filter(
-                ~Q(status='DRAFT') | Q(status='DRAFT', reporter=user)
+                Q(status='DRAFT', reporter=user) |
+                ~Q(status='DRAFT')
             )
 
         return queryset
@@ -45,7 +49,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
-        
+
     @extend_schema(exclude=True)
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)

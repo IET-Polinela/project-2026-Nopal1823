@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Daftar Laporan - Metro City{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Daftar Laporan</li>
+    </ol>
+</nav>
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2 class="me-3">Daftar Laporan</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'add_report' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Tambah Laporan
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Cari judul atau deskripsi..." value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">Semua Kategori</option>
+                    <option value="Jalan Rusak" {% if request.GET.category == 'Jalan Rusak' %}selected{% endif %}>Jalan Rusak</option>
+                    <option value="Sampah" {% if request.GET.category == 'Sampah' %}selected{% endif %}>Sampah</option>
+                    <option value="Lampu Mati" {% if request.GET.category == 'Lampu Mati' %}selected{% endif %}>Lampu Mati</option>
+                    <option value="Drainase" {% if request.GET.category == 'Drainase' %}selected{% endif %}>Drainase</option>
+                    <option value="Keamanan" {% if request.GET.category == 'Keamanan' %}selected{% endif %}>Keamanan</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Semua Status</option>
+                    <option value="REPORTED" {% if request.GET.status == 'REPORTED' %}selected{% endif %}>Dilaporkan</option>
+                    <option value="VERIFIED" {% if request.GET.status == 'VERIFIED' %}selected{% endif %}>Diverifikasi</option>
+                    <option value="IN_PROGRESS" {% if request.GET.status == 'IN_PROGRESS' %}selected{% endif %}>Dalam Proses</option>
+                    <option value="RESOLVED" {% if request.GET.status == 'RESOLVED' %}selected{% endif %}>Selesai</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Cari
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if reports %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th scope="col">Judul</th>
+                    <th scope="col">Lokasi</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>
+                        <strong>{{ report.title }}</strong><br>
+                        <small class="text-muted">{{ report.category }}</small>
+                    </td>
+                    <td>{{ report.location }}</td>
+                    <td>
+                        <span class="badge bg-{% if report.status == 'REPORTED' %}danger{% elif report.status == 'VERIFIED' %}info{% elif report.status == 'IN_PROGRESS' %}warning{% else %}success{% endif %}">
+                            {{ report.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary" title="Lihat Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'edit_report' report.pk %}" class="btn btn-sm btn-warning" title="Edit Laporan">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger btn-delete-trigger" data-pk="{{ report.pk }}" data-title="{{ report.title }}" data-category="{{ report.category }}" data-location="{{ report.location }}" title="Hapus Laporan">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Single shared Delete Confirmation Modal -->
+    <div class="modal fade" id="sharedDeleteModal" tabindex="-1" aria-labelledby="sharedDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="sharedDeleteModalLabel">
+                        <i class="bi bi-exclamation-triangle"></i> Konfirmasi Hapus
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus laporan berikut?</p>
+                    <div class="alert alert-light border">
+                        <strong id="deleteModalTitle"></strong><br>
+                        <small id="deleteModalMeta"></small>
+                    </div>
+                    <p class="text-muted mb-0"><small>Tindakan ini tidak dapat dibatalkan.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <form method="post" id="deleteForm" action="" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Ya, Hapus
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = new bootstrap.Modal(document.getElementById('sharedDeleteModal'));
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-delete-trigger');
+            if (!btn) return;
+            const pk       = btn.dataset.pk;
+            const title    = btn.dataset.title;
+            const category = btn.dataset.category;
+            const location = btn.dataset.location;
+            document.getElementById('deleteModalTitle').textContent = title;
+            document.getElementById('deleteModalMeta').textContent  = 'Kategori: ' + category + ' | Lokasi: ' + location;
+            document.getElementById('deleteForm').action = '/delete/' + pk + '/';
+            modal.show();
+        });
+    });
+    </script>
+{% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <span class="display-6 text-muted">Belum ada laporan</span>
+        </div>
+        <p class="text-muted mb-4">Silakan tambah laporan pertama Anda untuk memulai.</p>
+        <a href="{% url 'add_report' %}" class="btn btn-success btn-lg">
+            <i class="bi bi-plus-circle"></i> Tambah Laporan
+        </a>
+    </div>
+{% endif %}
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+            </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

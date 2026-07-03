@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard — Metro City{% endblock %}
+
+{% block content %}
+<style>
+    /* ── Dashboard-specific overrides ── */
+    .stat-card {
+        border-radius: 16px;
+        color: #fff;
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,.15);
+        transition: transform .25s ease, box-shadow .25s ease;
+        animation: fadeInUp .5s ease-out both;
+    }
+    .stat-card:hover { transform: translateY(-6px); box-shadow: 0 16px 36px rgba(0,0,0,.2); }
+    .stat-card .stat-icon { font-size: 2.8rem; opacity: .85; }
+    .stat-card .stat-value { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+    .stat-card .stat-label { font-size: .85rem; opacity: .85; text-transform: uppercase; letter-spacing: 1px; margin-top:.25rem; }
+
+    .bg-grad-blue   { background: linear-gradient(135deg,#5e72e4,#4c63d2); }
+    .bg-grad-red    { background: linear-gradient(135deg,#f5365c,#d32f6a); }
+    .bg-grad-yellow { background: linear-gradient(135deg,#fb6340,#f7961e); }
+    .bg-grad-teal   { background: linear-gradient(135deg,#11cdef,#0d8fbf); }
+    .bg-grad-green  { background: linear-gradient(135deg,#2dce89,#1ea76d); }
+
+    .chart-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(31,38,135,.12);
+        padding: 1.5rem;
+        height: 100%;
+    }
+    .chart-card h5 { font-size:1rem; font-weight:800; color:#32325d; margin-bottom:1rem; }
+
+    /* search bar */
+    #searchInput { border-radius: 50px; padding:.7rem 1.4rem; font-size:.95rem; border:2px solid #e9ecef; transition:border-color .2s; }
+    #searchInput:focus { border-color:#5e72e4; box-shadow:0 0 0 4px rgba(94,114,228,.12); outline:none; }
+    #searchResultsContainer { display:none; }
+
+    /* status badges in tables / modal */
+    .status-badge {
+        display:inline-block; padding:.35rem .9rem; border-radius:20px;
+        font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+    }
+    .status-REPORTED  { background:#fff3cd; color:#856404; }
+    .status-VERIFIED  { background:#cce5ff; color:#004085; }
+    .status-IN_PROGRESS { background:#d4edda; color:#155724; }
+    .status-RESOLVED  { background:#d1ecf1; color:#0c5460; }
+
+    /* modal */
+    #detailModal .modal-header { background:linear-gradient(135deg,#5e72e4,#11cdef); color:#fff; border-radius:12px 12px 0 0; }
+    #detailModal .modal-header .btn-close { filter:invert(1); }
+    #detailModal .modal-body  { padding:1.8rem; }
+    #detailModal .detail-row  { display:flex; gap:1rem; margin-bottom:1rem; }
+    #detailModal .detail-label{ font-weight:700; color:#8898aa; font-size:.8rem; text-transform:uppercase; letter-spacing:.8px; min-width:110px; }
+    #detailModal .detail-value{ color:#32325d; font-size:.95rem; }
+
+    .spinner-wrapper { text-align:center; padding:2rem; color:#8898aa; }
+
+    /* search table */
+    #searchTable { font-size:.88rem; }
+    #searchTable th { font-size:.75rem; }
+
+    @keyframes fadeInUp {
+        from { opacity:0; transform:translateY(18px); }
+        to   { opacity:1; transform:translateY(0);    }
+    }
+    .section-title {
+        font-size:1.3rem; font-weight:800; color:#32325d;
+        border-left:5px solid #5e72e4; padding-left:.8rem;
+        margin-bottom:1.2rem;
+    }
+</style>
+
+<!-- ═══════════════════ PAGE HEADER ═══════════════════ -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 style="font-size:2rem;">📊 Dashboard Metro City</h1>
+        <p class="text-muted mb-0">Statistik real-time laporan warga kota</p>
+    </div>
+    <a href="/reports/" class="btn btn-primary btn-sm">
+        <i class="bi bi-clipboard-check me-1"></i>Kelola Laporan
+    </a>
+</div>
+
+<!-- ═══════════════════ STAT CARDS ═══════════════════ -->
+<div class="row g-3 mb-4" id="statCards">
+    <div class="col-6 col-md-3">
+        <div class="stat-card bg-grad-blue">
+            <div class="stat-icon">📋</div>
+            <div>
+                <div class="stat-value" id="totalCount">—</div>
+                <div class="stat-label">Total Laporan</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card bg-grad-red">
+            <div class="stat-icon">🚨</div>
+            <div>
+                <div class="stat-value" id="reportedCount">—</div>
+                <div class="stat-label">Dilaporkan</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card bg-grad-yellow">
+            <div class="stat-icon">⚙️</div>
+            <div>
+                <div class="stat-value" id="inProgressCount">—</div>
+                <div class="stat-label">Diproses</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card bg-grad-green">
+            <div class="stat-icon">✅</div>
+            <div>
+                <div class="stat-value" id="resolvedCount">—</div>
+                <div class="stat-label">Selesai</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ CHARTS ═══════════════════ -->
+<div class="row g-4 mb-4">
+    <div class="col-md-5">
+        <div class="chart-card">
+            <h5>🍩 Distribusi Status Laporan</h5>
+            <canvas id="statusChart" style="max-height:280px;"></canvas>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="chart-card">
+            <h5>📊 Distribusi Kategori Laporan</h5>
+            <canvas id="categoryChart" style="max-height:280px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ RECENT TABLES ═══════════════════ -->
+<div class="row g-4 mb-5">
+    <!-- Latest REPORTED -->
+    <div class="col-md-6">
+        <div class="chart-card">
+            <h5>🆕 5 Laporan Terbaru (REPORTED)</h5>
+            <div id="reportedTable"><div class="spinner-wrapper"><div class="spinner-border spinner-border-sm"></div> Memuat…</div></div>
+        </div>
+    </div>
+    <!-- Latest RESOLVED -->
+    <div class="col-md-6">
+        <div class="chart-card">
+            <h5>✅ 5 Laporan Terselesaikan (RESOLVED)</h5>
+            <div id="resolvedTable"><div class="spinner-wrapper"><div class="spinner-border spinner-border-sm"></div> Memuat…</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ LIVE SEARCH SECTION ═══════════════════ -->
+<div class="mb-5">
+    <div class="section-title">🔍 Live Search Laporan</div>
+    <div class="position-relative mb-3">
+        <input type="text" id="searchInput" class="form-control w-100"
+               placeholder="Ketik judul, lokasi, kategori… (hasil muncul otomatis)" autocomplete="off">
+        <span id="searchSpinner" class="position-absolute top-50 end-0 translate-middle-y me-3 d-none">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+        </span>
+    </div>
+    <div id="searchMeta" class="text-muted small mb-2"></div>
+
+    <div id="searchResultsContainer">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="searchTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Judul</th>
+                        <th>Kategori</th>
+                        <th>Lokasi</th>
+                        <th>Status</th>
+                        <th>Tanggal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="searchBody"></tbody>
+            </table>
+        </div>
+        <p id="noResults" class="text-center text-muted d-none">Tidak ada laporan yang cocok.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════ DETAIL MODAL ═══════════════════ -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:16px; overflow:hidden; border:none;">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="detailModalLabel">
+                    <i class="bi bi-file-earmark-text me-2"></i>Detail Laporan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="spinner-wrapper"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Colour palettes ──────────────────────────────────────────
+    const STATUS_COLORS = {
+        'REPORTED':    '#f5365c',
+        'VERIFIED':    '#5e72e4',
+        'IN_PROGRESS': '#fb6340',
+        'RESOLVED':    '#2dce89',
+    };
+    const CATEGORY_COLORS = ['#5e72e4','#11cdef','#2dce89','#fb6340','#f5365c','#8965e0','#ffd600'];
+
+    // ── Helper: render a small table ─────────────────────────────
+    function renderMiniTable(containerId, rows) {
+        const container = document.getElementById(containerId);
+        if (!rows || rows.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center small py-3">Tidak ada data.</p>';
+            return;
+        }
+        let html = '<div class="table-responsive"><table class="table table-sm align-middle" style="font-size:.82rem;">'
+            + '<thead><tr><th>Judul</th><th>Kategori</th><th>Tanggal</th><th></th></tr></thead><tbody>';
+        rows.forEach(r => {
+            html += `<tr>
+                <td class="fw-semibold">${r.title}</td>
+                <td>${r.category}</td>
+                <td>${r.created_at}</td>
+                <td><button class="btn btn-sm btn-primary py-0 px-2 detail-btn" data-id="${r.id}" style="font-size:.75rem;">Detail</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    }
+
+    // ── Fetch stats from JSON API ─────────────────────────────────
+    fetch('/dashboard/api/stats/')
+        .then(res => res.json())
+        .then(data => {
+            console.log('📦 Dashboard Stats JSON:', data);   // For screenshot requirement #6
+
+            // Stat cards
+            document.getElementById('totalCount').textContent = data.total;
+            const si = data.status.labels.indexOf('REPORTED');
+            const ii = data.status.labels.indexOf('IN_PROGRESS');
+            const ri = data.status.labels.indexOf('RESOLVED');
+            document.getElementById('reportedCount').textContent   = si >= 0 ? data.status.counts[si] : 0;
+            document.getElementById('inProgressCount').textContent = ii >= 0 ? data.status.counts[ii] : 0;
+            document.getElementById('resolvedCount').textContent   = ri >= 0 ? data.status.counts[ri] : 0;
+
+            // ── Doughnut chart — Status ──────────────────────────
+            const statusColors = data.status.labels.map(l => STATUS_COLORS[l] || '#adb5bd');
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.status.labels,
+                    datasets: [{
+                        data: data.status.counts,
+                        backgroundColor: statusColors,
+                        borderWidth: 3,
+                        borderColor: '#fff',
+                        hoverOffset: 10,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 12, weight: '700' }, padding: 16 } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = ((ctx.raw / total) * 100).toFixed(1);
+                                    return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // ── Bar chart — Category ─────────────────────────────
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.category.labels,
+                    datasets: [{
+                        label: 'Jumlah Laporan',
+                        data: data.category.counts,
+                        backgroundColor: data.category.labels.map((_, i) => CATEGORY_COLORS[i % CATEGORY_COLORS.length]),
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} laporan` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 50 }, grid: { color: 'rgba(0,0,0,.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // ── Mini tables ───────────────────────────────────────
+            renderMiniTable('reportedTable', data.latest_reported);
+            renderMiniTable('resolvedTable', data.latest_resolved);
+        })
+        .catch(err => console.error('Stats fetch error:', err));
+
+
+    // ── Live Search with debouncing ───────────────────────────────
+    let debounceTimer = null;
+    const searchInput     = document.getElementById('searchInput');
+    const searchSpinner   = document.getElementById('searchSpinner');
+    const searchMeta      = document.getElementById('searchMeta');
+    const searchContainer = document.getElementById('searchResultsContainer');
+    const searchBody      = document.getElementById('searchBody');
+    const noResults       = document.getElementById('noResults');
+
+    function statusBadge(status) {
+        return `<span class="status-badge status-${status}">${status.replace('_', ' ')}</span>`;
+    }
+
+    function performSearch(query) {
+        if (query.length === 0) {
+            searchContainer.style.display = 'none';
+            searchMeta.textContent = '';
+            return;
+        }
+        searchSpinner.classList.remove('d-none');
+        fetch(`/dashboard/api/search/?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log('🔎 Search JSON:', data);  // For screenshot requirement #6
+                searchSpinner.classList.add('d-none');
+                searchContainer.style.display = 'block';
+                searchMeta.textContent = `Menampilkan ${data.count} hasil untuk "${data.query}"`;
+
+                if (data.results.length === 0) {
+                    searchBody.innerHTML = '';
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                    searchBody.innerHTML = data.results.map((r, i) => `
+                        <tr>
+                            <td class="text-muted">${i + 1}</td>
+                            <td class="fw-semibold">${r.title}</td>
+                            <td>${r.category}</td>
+                            <td class="text-muted small">${r.location.substring(0, 40)}…</td>
+                            <td>${statusBadge(r.status)}</td>
+                            <td class="text-muted small">${r.created_at}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary py-0 px-2 detail-btn"
+                                        data-id="${r.id}" style="font-size:.75rem;">
+                                    <i class="bi bi-eye"></i> Detail
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            })
+            .catch(err => {
+                searchSpinner.classList.add('d-none');
+                console.error('Search error:', err);
+            });
+    }
+
+    // Debounce: wait 350 ms after user stops typing
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const q = this.value.trim();
+        debounceTimer = setTimeout(() => performSearch(q), 350);
+    });
+
+
+    // ── Detail Modal via AJAX / Fetch API ─────────────────────────
+    // Event Delegation: single listener on document handles buttons
+    // added BOTH by renderMiniTable AND the live-search table.
+    const modalEl   = document.getElementById('detailModal');
+    const modalBody = document.getElementById('modalBody');
+    const bsModal   = new bootstrap.Modal(modalEl);
+
+    const STATUS_DISPLAY = {
+        'REPORTED':    { label: 'Dilaporkan',  cls: 'status-REPORTED'    },
+        'VERIFIED':    { label: 'Diverifikasi', cls: 'status-VERIFIED'   },
+        'IN_PROGRESS': { label: 'Diproses',    cls: 'status-IN_PROGRESS' },
+        'RESOLVED':    { label: 'Selesai',     cls: 'status-RESOLVED'    },
+    };
+
+    document.addEventListener('click', function (e) {
+        // Event Delegation: catch any .detail-btn regardless of where it was injected
+        const btn = e.target.closest('.detail-btn');
+        if (!btn) return;
+
+        const reportId = btn.dataset.id;
+        modalBody.innerHTML = '<div class="spinner-wrapper"><div class="spinner-border text-primary"></div> Memuat detail…</div>';
+        bsModal.show();
+
+        fetch(`/dashboard/api/report/${reportId}/`)
+            .then(res => res.json())
+            .then(r => {
+                console.log('📄 Report Detail JSON:', r);  // For screenshot requirement #6
+                const sd = STATUS_DISPLAY[r.status] || { label: r.status, cls: 'status-REPORTED' };
+                modalBody.innerHTML = `
+                    <div class="detail-row">
+                        <span class="detail-label">Judul</span>
+                        <span class="detail-value fw-bold">${r.title}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Kategori</span>
+                        <span class="detail-value">
+                            <span class="badge bg-primary" style="font-size:.8rem;">${r.category}</span>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">
+                            <span class="status-badge ${sd.cls}">${sd.label}</span>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Lokasi</span>
+                        <span class="detail-value"><i class="bi bi-geo-alt text-danger me-1"></i>${r.location}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tanggal</span>
+                        <span class="detail-value"><i class="bi bi-calendar3 text-primary me-1"></i>${r.created_at}</span>
+                    </div>
+                    <hr>
+                    <div class="detail-label mb-2">Deskripsi</div>
+                    <p style="color:#32325d; line-height:1.8;">${r.description}</p>
+                `;
+            })
+            .catch(err => {
+                modalBody.innerHTML = '<p class="text-danger text-center">Gagal memuat detail laporan.</p>';
+                console.error('Modal fetch error:', err);
+            });
+    });
+
+});
+</script>
+{% endblock %}
