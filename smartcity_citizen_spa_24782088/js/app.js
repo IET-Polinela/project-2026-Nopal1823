@@ -10,19 +10,33 @@
 let currentTab  = 'my_reports';
 let currentPage = 1;
 let editingReportId = null;
-let isLoading = false;
+let isLoading = false; // dipertahankan agar kode lain yang membaca variabel ini tidak rusak
+let loadRequestSeq = 0; // penanda permintaan terbaru, dipakai untuk membatalkan hasil basi (stale)
 
 // =============================================
 // LOAD & RENDER DASHBOARD DATA
 // =============================================
 async function loadDashboardData(tab = currentTab, page = currentPage) {
-    if (isLoading) return;
+    // Sebelumnya: `if (isLoading) return;` membuat request baru (mis. ganti tab)
+    // diabaikan total kalau request sebelumnya belum selesai — inilah race
+    // condition yang membuat UI-03 gagal (tab "feed" ter-skip, data lama tetap
+    // tampil) dan berkontribusi pada UI-05 (state loading tidak konsisten).
+    //
+    // Solusi: setiap panggilan mendapat nomor urut (seq). Request tetap
+    // dikirim, tapi hasilnya hanya dipakai untuk render jika seq tersebut
+    // masih yang TERBARU saat respons datang. Request lama yang "menyusul"
+    // otomatis diabaikan (stale), tanpa menghalangi request baru berjalan.
+    const mySeq = ++loadRequestSeq;
     isLoading = true;
 
     currentTab  = tab;
     currentPage = page;
 
     const response = await requestAPI(`/api/report/?tab=${tab}&page=${page}`, 'GET');
+
+    // Kalau ada request lain yang lebih baru sudah dikirim setelah ini,
+    // abaikan hasil request basi ini agar tidak menimpa UI dengan data lama.
+    if (mySeq !== loadRequestSeq) return;
 
     if (response.ok && response.status === 200) {
         // INSTRUKSI 1: Ekstraksi Data Paginasi
