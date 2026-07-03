@@ -1,7 +1,6 @@
 name: Deploy Frontend SPA to GitHub Pages
 
 on:
-  # Akan otomatis berjalan setiap kali ada push ke branch main/master
   push:
     branches: ["main", "master"]
   workflow_dispatch:
@@ -27,8 +26,7 @@ jobs:
       - name: Upload artifact (Hanya Folder Frontend)
         uses: actions/upload-pages-artifact@v3
         with:
-          # UBAH 'smartcity_citizen_spa_24782088' DI BAWAH INI JIKA NAMA FOLDER SPA-NYA BERBEDA
-          path: './smartcity_citizen_spa_24782088'
+          path: './smartcity_citizen_spa_24782022'
 
       - name: Deploy to GitHub Pages
         id: deployment
