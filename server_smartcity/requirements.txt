@@ -4,3 +4,6 @@ djangorestframework-simplejwt>=5.3.0
 django-cors-headers>=4.3.0
 gunicorn
 psycopg2-binary
+drf-spectacular
+django-scalar
+Faker
