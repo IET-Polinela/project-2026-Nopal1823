@@ -1,0 +1,154 @@
+# Simpan sebagai: .github/workflows/ci-cd.yml
+# (hapus .github/workflows/deploy_pages.yml agar deploy tidak berjalan dua kali)
+#
+# Versi TANPA unit test (tidak menjalankan main_app/tests).
+# CI hanya memeriksa bahwa project "sehat":
+#   - kode Python tidak punya error sintaks
+#   - konfigurasi Django valid
+#   - migration konsisten dengan model dan bisa dijalankan di PostgreSQL
+#   - JavaScript SPA tidak punya error sintaks
+#
+# Alur:
+#   Pull request            -> CI saja
+#   Push ke main / master   -> CI, lalu jika lolos -> deploy SPA ke GitHub Pages
+#   Manual (Run workflow)   -> sama seperti push ke main
+
+name: CI/CD Smart City (tanpa test)
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------
+  # CI 1: Cek kesehatan backend Django (tanpa menjalankan test)
+  # ---------------------------------------------------------------
+  backend-check:
+    name: Backend (Django health check)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server_smartcity
+
+    # settings.py memakai PostgreSQL dengan kredensial tetap
+    # (db metrodb, user postgres, password 123, localhost:5432),
+    # jadi service ini dibuat persis sama agar kode tidak perlu diubah.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: metrodb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "123"
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: server_smartcity/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Mengecek error sintaks di semua file Python
+      - name: Cek sintaks Python
+        run: python -m compileall -q .
+
+      # Mengecek konfigurasi: INSTALLED_APPS, model, URL, dll.
+      - name: Django system check
+        run: python manage.py check
+
+      # Gagal jika model diubah tetapi file migration belum dibuat
+      - name: Cek migration belum terlupa
+        run: python manage.py makemigrations --check --dry-run
+
+      # Memastikan seluruh migration bisa dijalankan di PostgreSQL
+      - name: Jalankan migration
+        run: python manage.py migrate --noinput
+
+  # ---------------------------------------------------------------
+  # CI 2: Cek frontend SPA (HTML/JS statis, tanpa build step)
+  # ---------------------------------------------------------------
+  frontend-check:
+    name: Frontend (SPA sanity check)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: smartcity_citizen_spa_24782088
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Pastikan file utama ada
+        run: |
+          test -f index.html
+          for f in api auth app router; do test -f "js/$f.js"; done
+
+      - name: Cek sintaks JavaScript
+        run: |
+          for f in js/*.js; do
+            echo "Memeriksa $f"
+            node --check "$f"
+          done
+
+  # ---------------------------------------------------------------
+  # CD: Deploy SPA ke GitHub Pages (hanya setelah CI lolos,
+  #     dan hanya pada push ke main/master atau run manual)
+  # ---------------------------------------------------------------
+  deploy:
+    name: Deploy ke GitHub Pages
+    needs: [backend-check, frontend-check]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact (hanya folder frontend)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./smartcity_citizen_spa_24782088
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
